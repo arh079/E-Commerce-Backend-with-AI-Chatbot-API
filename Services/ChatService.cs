@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace ChatAPI.Services
 {
@@ -150,18 +151,42 @@ namespace ChatAPI.Services
             if (products.Count < 2)
                 return ("NotFound!");
 
-            var result = "Comparison:";
+            var productsInfo = string.Join("\n", products.Select(p =>
+         $"Name: {p.ProductName}, Price: {p.Price}, Description: {p.Description}"));
 
-            foreach (var p in products)
+
+            var systemPrompt = @"
+                                You are a professional electronics sales assistant.
+                                Compare products based on price, performance, and value.
+                                Always recommend one product as the best choice.
+                                Keep it short and convincing.
+                                Plain text only. 
+                                Rules:
+                                - Always mention product names clearly
+                                - Always support your comparison with numbers (price, specs, or differences)
+                                - Highlight key differences between products
+                                - Recommend ONE product as the best choice and explain why";
+                               
+
+            var userPrompt = $@"
+                                Compare these products and tell the customer which is better and why:
+
+                                {productsInfo}";
+                                
+           
+            var body = new
             {
-                result += $"{p.ProductName} Price: {p.Price} Description: {p.Description}";
-            }
+                model = "openrouter/free",
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = userPrompt }
+                }
+            };
 
-            var cheapest = products.OrderBy(p => p.Price).First();
+            var aiResponse = await aiService.GetAIContentAsync(body);
 
-            result += $"Cheapest: {cheapest.ProductName}";
-
-            return result;
+            return aiResponse;
         }
     }
 }

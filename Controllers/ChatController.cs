@@ -43,7 +43,6 @@ namespace ChatAPI.Controllers
                 await chatService.SendMessageAsync(userId, dto.ConversationId, dto.Message);
 
             var Cleanreply =  aIService.CleanAiResponse(reply);
-            //var Cleanreply = Regex.Replace(Clean, @"(^\w\s\p{P})", "");
 
             return Ok(new{ Cleanreply });
         }
